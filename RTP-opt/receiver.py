@@ -17,7 +17,7 @@ def receiver(receiver_ip, receiver_port, window_size):
         raw_pkt, addr = sock.recvfrom(2048)
 
         hdr = PacketHeader(raw_pkt[:16])
-        msg = raw_pkt[16 : 16 + hdr.len]
+        msg = raw_pkt[16 : 16 + hdr.length]
 
         cs_goc = hdr.checksum
         hdr.checksum = 0
@@ -32,7 +32,7 @@ def receiver(receiver_ip, receiver_port, window_size):
                 seq_cho = 1
                 bo_dem.clear()
                 
-                ack = PacketHeader(type=3, seq_num=1, len=0, checksum=0)
+                ack = PacketHeader(type=3, seq_num=1, length=0, checksum=0)
                 ack.checksum = compute_checksum(ack / b"")
                 sock.sendto(bytes(ack), sender_addr)
             continue
@@ -41,10 +41,10 @@ def receiver(receiver_ip, receiver_port, window_size):
             continue
 
         if hdr.type == 2:
-            if hdr.seq_num >= seq_cho + window_size:
+            if hdr.seq_num >= seq_cho + window_size or hdr.seq_num < max(0, seq_cho - window_size):
                 continue
 
-            ack = PacketHeader(type=3, seq_num=hdr.seq_num, len=0, checksum=0)
+            ack = PacketHeader(type=3, seq_num=hdr.seq_num, length=0, checksum=0)
             ack.checksum = compute_checksum(ack / b"")
             sock.sendto(bytes(ack), sender_addr)
 
@@ -58,7 +58,7 @@ def receiver(receiver_ip, receiver_port, window_size):
 
         elif hdr.type == 1:
             if hdr.seq_num == seq_cho:
-                ack = PacketHeader(type=3, seq_num=hdr.seq_num + 1, len=0, checksum=0)
+                ack = PacketHeader(type=3, seq_num=hdr.seq_num + 1, length=0, checksum=0)
                 ack.checksum = compute_checksum(ack / b"")
                 sock.sendto(bytes(ack), sender_addr)
                 break
